@@ -1,6 +1,7 @@
 from tkinter import *
 from tkinter import messagebox
 import random
+import json
 
 # ---------------------------- PASSWORD GENERATOR ------------------------------- #
 def generate_password():
@@ -23,22 +24,37 @@ def generate_password():
     password = "".join(password_list)
     password_entry.insert(0, password)
 
-    print(f"Your password is: {password}")
 # ---------------------------- SAVE PASSWORD ------------------------------- #
 def save_password():
     website_val = website_entry.get()
     username_val = username_entry.get()
     password_val = password_entry.get()
-    #確保項目不為空值
     if website_val and username_val and password_val:
-        is_ok = messagebox.askokcancel(title="Verify Input", message=f"Website: {website_val}\nUser Name: {username_val}\npassword: {password_val}")
-        if is_ok:
-            with open("password.txt", "a") as f:
-                f.write(f"{website_val} | {username_val} | {password_val}\n")
+        try:
+            with open("password.json", "r") as data_file:
+                data = json.load(data_file)
+                if website_val not in data:
+                    data[website_val] = {}
+                if username_val in data[website_val]:
+                    update_ok = messagebox.askokcancel(
+                    title="Verify Update",
+                    message=f"User Name: {username_val} already exists!\nUpdate its password?"
+                    )
+                    if update_ok:
+                        data[website_val][username_val] = password_val
+                else:
+                    data[website_val][username_val] = password_val
+
+            with open("password.json", "w") as f:
+                json.dump(data, f, indent=4)
+
+            
+        except (FileNotFoundError, json.JSONDecodeError):
+            data = {}
             #清空輸入框    
-            website_entry.delete(0, 'end')
-            username_entry.delete(0, 'end')
-            password_entry.delete(0, 'end')
+        website_entry.delete(0, 'end')
+        username_entry.delete(0, 'end')
+        password_entry.delete(0, 'end')
     else:
         messagebox.showerror(title="Error", message="All fields are required!")
     
